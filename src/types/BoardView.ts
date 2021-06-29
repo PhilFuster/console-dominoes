@@ -1,7 +1,7 @@
-import {Board, Tile} from './Board';
+import {Tile} from './Tile';
 
 export class BoardView {
-  static toConsole(board: Tile[]) {
+  static toConsole(board: Readonly<Tile[]>) {
     let row1 = '';
     let row2 = '';
     let row3 = '';

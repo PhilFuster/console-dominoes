@@ -1,4 +1,5 @@
-import {Board, Tile} from './Board';
+import {Board} from './Board';
+import {Tile} from './Tile';
 import {Player, Human, Computer} from './Player';
 import {Stock} from './Stock';
 import {readLine, readLineAndValidate} from '../utilities';

@@ -1,4 +1,5 @@
-import {Tile, Board} from './Board';
+import {Board, BoardSide} from './Board';
+import {Tile} from './Tile';
 import {BoardView} from './BoardView';
 import {Game} from './Game';
 import {readLineAndValidate} from '../utilities';
@@ -13,18 +14,21 @@ enum MenuOption {
   skip = 3,
   help = 4,
 }
+// human can select either a menu option
+// or a tile from their hand
+enum MenuChoiceType {
+  Menu = 'm',
+  Tile = 't',
+}
 
 export abstract class Player {
   abstract readonly playerType: PlayerType;
   public hand: Tile[] = [];
   constructor(readonly name: string) {}
   abstract play(board: Board, game: Game): Promise<boolean> | boolean;
-}
-// human can select either a menu option
-// or a tile from their hand
-enum MenuChoiceType {
-  Menu = 'm',
-  Tile = 't',
+  toString() {
+    return this.name;
+  }
 }
 export class Human extends Player {
   readonly playerType = PlayerType.Human;
@@ -41,41 +45,64 @@ export class Human extends Player {
       hand: this.hand,
     };
     this.displayHand();
-    const choice = await readLineAndValidate(
-      `Enter a menu item:
-              1: Display Board
-              2: Display Hand
-              3: Skip
-              4: Help
-            OR
-            Choose a tile to play.
-            Example of choosing a tile: 3-5
-      `,
-      this.validateMenuChoice,
-      menuValidationArguments
-    );
-    if (menuValidationArguments.menuChoiceType === MenuChoiceType.Menu) {
-      // perform the menu choice.
-      console.log(`User chose menu option: ${choice}`);
-      const menuChoice = parseInt(choice);
-      switch (menuChoice) {
-        case MenuOption.displayBoard:
-          BoardView.toConsole([
-            {pip1: 0, pip2: 0},
-            {pip1: 0, pip2: 4},
-            {pip1: 4, pip2: 6},
-            {pip1: 6, pip2: 6},
-            {pip1: 6, pip2: 1},
-            {pip1: 1, pip2: 1},
-            {pip1: 1, pip2: 0},
-          ]);
-          break;
+    let gotMove = false;
+    while (!gotMove) {
+      const choice = await readLineAndValidate(
+        `Enter a menu item:
+                1: Display Board
+                2: Display Hand
+                3: Skip
+                4: Help
+              OR
+              Choose a tile to play.
+              Example of choosing a tile: 3-5
+        `,
+        this.validateMenuChoice,
+        menuValidationArguments
+      );
+      if (menuValidationArguments.menuChoiceType === MenuChoiceType.Menu) {
+        // perform the menu choice.
+        const menuChoice = parseInt(choice);
+        switch (menuChoice) {
+          case MenuOption.displayBoard:
+            BoardView.toConsole(board.get());
+            break;
+          case MenuOption.displayHand:
+            this.displayHand();
+            break;
+          case MenuOption.skip:
+            // TODO: Implement skip
+            console.log(`${this.toString()} has skipped.`);
+            break;
+        }
+      } else if (
+        menuValidationArguments.menuChoiceType === MenuChoiceType.Tile
+      ) {
+        // user has chosen a valid tile that is within their hand..
+        // Get the side of the board they wish to place tile on.
+        // creating instance of tile for now b/c validation has not been completed.
+        // will remove the tile from player hand at the end.
+        const tileChoice = new Tile(parseInt(choice[0]), parseInt(choice[2]));
+        const sideChoice = await readLineAndValidate(
+          `Which side of the board will you place tile ${tileChoice.toString()}?\n
+            Valid options: "L" or "R":\n
+          `,
+          this.validateBoardSideChoice,
+          {}
+        );
+        // pass this info the board.
+        const validMove = board.validateMove(
+          tileChoice,
+          sideChoice as BoardSide
+        );
+        if (!validMove) {
+          // fkk invalid move restart..
+          continue;
+        } else {
+          // submit move and do all that stuff
+          gotMove = true;
+        }
       }
-    } else if (menuValidationArguments.menuChoiceType === MenuChoiceType.Tile) {
-      // user has chosen a tile that is within their hand..
-      // Get the side of the board they wish to place tile on.
-      // then validate that this works for the board.
-      console.log(`User chose tile: ${choice}`);
     }
     return true;
   }
@@ -115,13 +142,13 @@ export class Human extends Player {
         inputRejected = true;
         msg = `Invalid tile input: ${input}`;
       }
-      tile = {pip1, pip2};
+      tile = new Tile(pip1, pip2);
       // make sure the tile is in the player's hand.
       inputRejected = !hand.some(t => {
         return t.pip1 === tile.pip1 && t.pip2 === tile.pip2;
       });
       if (inputRejected) {
-        msg = `Tile ${tile.pip1}-${tile.pip2} not in Player's hand.`;
+        msg = `Tile ${tile.toString()} not in Player's hand.`;
       } else {
         options.menuChoiceType = MenuChoiceType.Tile;
       }
@@ -139,10 +166,19 @@ export class Human extends Player {
     }
   }
 
+  validateBoardSideChoice(input: string): boolean {
+    if (input.length !== 1 || (input !== 'R' && input !== 'L')) {
+      console.log(`Invalid input: ${input}`);
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   displayHand() {
     let rVal = '';
     this.hand.forEach((t, i) => {
-      rVal += `${t.pip1} - ${t.pip2}${i === this.hand.length - 1 ? '' : ', '}`;
+      rVal += `${t.toString()}${i === this.hand.length - 1 ? '' : ', '}`;
     });
     console.log(rVal);
   }

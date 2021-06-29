@@ -21,7 +21,14 @@ export function readLine(question: string): Promise<string> {
     });
   });
 }
-
+/**
+ *
+ * This function takes a prompt, a validator function and arguments the validator may need
+ * @param question - prompt for the user.
+ * @param validator - a validator function that validates the input
+ * @param options - any arguments that a caller would need to validate the input
+ * @returns string - the input from the user
+ */
 export function readLineAndValidate<T>(
   question: string,
   validator: ITValidator<T> = () => true,

@@ -1,5 +1,4 @@
 import {Stock} from '../src/types/Stock';
-import {Tile} from '../src/types/Board';
 import {sixPipTiles, sevenPipTiles, eightPipTiles} from './tilesTestData';
 
 describe('Stock', () => {
@@ -11,19 +10,19 @@ describe('Stock', () => {
     test(`expected tiles ${expectedTiles}`, () => {
       const stock = new Stock();
       stock.initialize(highestPip);
-      expect(stock.length()).toBe(expectedTiles);
+      expect(stock.length).toBe(expectedTiles);
     });
 
     test(`tiles created should match what is in ${highestPip}PipTiles variable`, () => {
       const stock = new Stock();
       stock.initialize(highestPip);
-      expect(stock.get()).toEqual(expect.arrayContaining(tiles));
+      expect(stock.tiles).toEqual(expect.arrayContaining(tiles));
     });
     test('.shuffle() should shuffle tiles but still contain the same overall elements', () => {
       const stock = new Stock();
       stock.initialize(highestPip);
       stock.shuffle();
-      expect(stock.get()).toEqual(expect.arrayContaining(tiles));
+      expect(stock.tiles).toEqual(expect.arrayContaining(tiles));
     });
   });
 });
